@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}-deployment
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.appSelector }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployment.appSelector }}
+    spec:
+      containers:
+      - name: {{ .Values.deployment.appSelector }}
+        image: {{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag }} #HA image
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: {{ .Values.service.haPort }} #home assistant's default port
+        volumeMounts:
+        - name: home-assistant-data
+          mountPath: {{ .Values.persistenceVolume.mountPath }} # the /config path in the HA is mounted to the path in the pv (mnt/data/home-assistant)
+        resources:
+          limits:
+            memory: "512Mi"                    # Maximum memory limit
+
+      volumes:
+      - name: home-assistant-data
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistenceVolume.claimName }} # the link to the pvc
+        
