@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws
+  namespace: argocd
+spec:
+  # Source repository and path
+  source:
+    repoURL: http://192.168.0.79:31327/gitea_admin/Infra.git
+    targetRevision: main # Branch name, tag, or commit hash
+    path: AWS/bucket # Directory in the repository containing Kubernetes manifests
+
+  # Destination cluster and namespace
+  destination:
+    server: https://kubernetes.default.svc # The URL of the target cluster (use this for the current cluster)
+
+  # Sync policy for automated synchronization
+  syncPolicy:
+    automated: # Enables automated syncs
+      prune: true # Automatically delete resources not defined in Git
+      selfHeal: true # Automatically correct drift
+
+  # Optional: Additional settings
+  project: default # ArgoCD project to associate with (use "default" for the default project)

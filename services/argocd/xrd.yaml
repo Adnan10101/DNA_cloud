@@ -1,0 +1,33 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: argocdapps.dnacloud.com
+spec:
+  group: dnacloud.com
+  names:
+    kind: ArgocdApps
+    listKind: ArgocdAppList
+    plural: argocdapps
+    singular: argocdapp
+  claimNames:
+    kind: xargocdapp
+    plural: xargocdapp
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              appname:
+                type: string
+              repoURL:
+                type: string
+              revision:
+                type: string
+              path:
+                type: string

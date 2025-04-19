@@ -1,0 +1,47 @@
+Metadata-Version: 2.0
+Name: gogs-client
+Version: 1.0.6
+Summary: A python library for interacting with a gogs server
+Home-page: https://github.com/unfoldingWord-dev/python-gogs-client
+Author: unfoldingWord
+Author-email: ethantkoenig@gmail.com
+License: MIT
+Keywords: gogs,http,client
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Requires-Dist: future
+Requires-Dist: requests
+Requires-Dist: attrs
+
+Master:
+  .. image:: https://travis-ci.org/unfoldingWord-dev/python-gogs-client.svg?branch=master
+    :alt: Build Status
+    :target: https://travis-ci.org/unfoldingWord-dev/python-gogs-client
+  .. image:: https://coveralls.io/repos/github/unfoldingWord-dev/python-gogs-client/badge.svg?branch=master
+    :alt: Coverage
+    :target: https://coveralls.io/github/unfoldingWord-dev/python-gogs-client?branch=master
+
+Develop:
+  .. image:: https://travis-ci.org/unfoldingWord-dev/python-gogs-client.svg?branch=develop
+    :alt: Build Status
+    :target: https://travis-ci.org/unfoldingWord-dev/python-gogs-client
+  .. image:: https://coveralls.io/repos/github/unfoldingWord-dev/python-gogs-client/badge.svg?branch=develop
+    :alt: Coverage
+    :target: https://coveralls.io/github/unfoldingWord-dev/python-gogs-client?branch=develop
+
+
+python-gogs-client
+==================
+
+This is a Python client to Gogs servers. The easiest way to install is via ``pip``::
+
+    $ pip install gogs_client
+
+Documentation for the module can be found `here <http://pythonhosted.org/gogs-client/>`_.
+
+
