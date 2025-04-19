@@ -1,0 +1,9 @@
+apiVersion: dnacloud.com/v1alpha1
+kind: ArgocdApps
+metadata:
+  name: test-app
+spec:
+  appname: testing-app
+  repoURL: http://192.168.0.79:31327/gitea_admin/Infra.git
+  revision: main
+  path: testing

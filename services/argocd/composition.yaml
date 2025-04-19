@@ -1,0 +1,42 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: argocdapp.dnacloud.com
+spec:
+  compositeTypeRef:
+    apiVersion: dnacloud.com/v1alpha1
+    kind: ArgocdApps
+  resources:
+    - name: argocdApplication
+      base:
+        apiVersion: argoproj.io/v1alpha1
+        kind: Application
+        metadata:
+          name: {{ .spec.appname }}
+          namespace: argocd
+        spec:
+          destination:
+            server: https://kubernetes.default.svc
+          source:
+            repoURL: http://192.168.0.79:31327/gitea_admin/Persistent-Volume.git #{{ .spec.repoURL }}
+            targetRevision: main #{{ .spec.revision }}
+            path:  #{{ .spec.path }}
+          project: default
+  #     patches:
+  #       - type: PatchSet
+  #         patchSetName: default
+  # patchSets:
+  # - name: default
+  #   patches:
+  #     - type: FromCompositeFieldPath
+  #       fromFieldPath: spec.appname
+  #       toFieldPath: metadata.name
+  #     - type: FromCompositeFieldPath
+  #       fromFieldPath: spec.repoURL
+  #       toFieldPath: spec.source.repoURL
+  #     - type: FromCompositeFieldPath
+  #       fromFieldPath: spec.revision
+  #       toFieldPath: spec.source.targetRevision
+  #     - type: FromCompositeFieldPath
+  #       fromFieldPath: spec.path
+  #       toFieldPath: spec.source.path

@@ -1,0 +1,16 @@
+image:
+  type: nginx
+  tag: latest
+
+deployment:
+  name: dna-web-server
+  app: webserver
+
+configmap:
+  name: web-server-cm
+
+service:
+  name: dna-web-server-service
+  port: 80
+  nodeport: 30800
+  type: NodePort
