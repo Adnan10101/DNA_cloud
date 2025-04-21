@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.labels.app }}
+    spec:
+      containers:
+      - name: bind
+        command:
+        - /bin/sh
+        - -c
+        - |
+          sed -e 's/PUBLIC_IP/$public_ip/' \
+              -e 's/HUB_IP/$hub_ip/' \
+              > /etc/bind-generated/db.dnacloudserver.home && \
+          chown 100:100 /etc/bind-generated/db.dnacloudserver.home && \
+          named -g -u bind 
+        env:
+        - name: public_ip
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secret.name }}
+              key: public-ip
+        - name: hub_ip
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.secret.name }}
+              key: hub-ip
+
+        image: {{ .Values.deployment.image }}:{{ .Values.deployment.tag }}
+        ports:
+        - containerPort: 53
+          protocol: UDP
+        - containerPort: 53
+          protocol: TCP
+        volumeMounts:
+        - name: {{ .Values.configmap.name }}
+          mountPath: /etc/bind
+        - name: bind-generated
+          mountPath: /etc/bind-generated
+        - name: bind-cache
+          mountPath: /var/cache/bind
+      volumes:
+      - name: {{ .Values.configmap.name }}
+        configMap:
+          name: {{ .Values.configmap.name }}
+      - name: bind-generated
+        emptyDir: {}
+      - name: bind-cache
+        emptyDir: {}
+        
