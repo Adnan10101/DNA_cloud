@@ -1,0 +1,17 @@
+labels:
+  app: bind
+
+deployment:
+  name: dns-server
+  image: internetsystemsconsortium/bind9
+  tag: 9.18
+
+configmap:
+  name: bind-cm
+
+secret: 
+  name: bind-secret
+
+service:
+  name: dns-server-service
+  nodePort: 30053
