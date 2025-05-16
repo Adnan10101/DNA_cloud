@@ -3,14 +3,14 @@ image:
   tag: latest
 
 deployment:
-  name: dna-web-server
+  name: dna-webserver
   app: webserver
 
 configmap:
-  name: web-server-cm
+  name: dna-loadbalancer-cm
 
 service:
-  name: dna-web-server-service
+  name: dna-load-balancer-service
   port: 80
   nodeport: 30800
   type: NodePort

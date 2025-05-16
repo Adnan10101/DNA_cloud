@@ -1,0 +1,103 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xvirtinfras.dnacloud.home
+spec:
+  group: dnacloud.home
+  names:
+    kind: xvirtInfra
+    plural: xvirtinfras
+    shortNames:
+    - vi
+  claimNames:
+    kind: virtInfra
+    plural: virtinfras
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              vm_details:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  vmname:
+                    type: string
+                  username:
+                    type: string
+                  password:
+                    type: string
+                required:
+                - id
+                - vmname
+                - username
+                - password
+
+              compute:
+                type: object
+                properties:
+                  cpu:
+                    type: object
+                    properties:
+                      cpu_count: 
+                        type: number
+                      core_count: 
+                        type: number
+                      memory: 
+                        type: number
+                      socket:
+                        type: number
+                        default: 1
+                      cpu_type:
+                        type: string
+                        default: host
+                    required:
+                    - cpu_count
+                    - core_count
+                    - memory
+
+                  disk:
+                    type: object
+                    properties:
+                      datastore_id:
+                        type: string
+                        default: local-lvm
+                      interface:
+                        type: string
+                        default: "scsi0"
+                      iothread:
+                        type: boolean
+                        default: true
+                      size:
+                        type: number
+                    required:
+                    - size
+
+                  network:
+                    type: object
+                    properties:
+                      ipv4_addr: 
+                        type: string
+                      gateway:
+                        type: string
+                      bridge:
+                        type: string
+                        default: "vmbr0"
+                      model:
+                        type: string
+                        default: virtio
+                    required:
+                    - ipv4_addr
+                    - gateway
+
+                      
+
+
+
