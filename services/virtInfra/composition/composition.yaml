@@ -1,0 +1,243 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: virt-infra
+spec:
+  compositeTypeRef:
+    apiVersion: dnacloud.home/v1alpha1
+    kind: xvirtInfra
+  mode: Pipeline
+  # environment:
+  #   environmentConfigs:
+  #     - type: Reference
+  #       ref:
+  #         apiVersion: fn.crossplane.io/v1beta1
+  #         kind: Function
+  #         name: function-go-templating
+  pipeline:
+  - step: create-vm
+    functionRef:
+      name: function-go-templating
+    input:
+      apiVersion: gotemplating.fn.crossplane.io/v1beta1
+      kind: GoTemplate
+      source: Inline
+      inline:
+        template: |-
+          ---
+          {{ $xr := $.observed.composite.resource  }}
+          
+          {{ $core_count :=  $.observed.composite.resource.spec.compute.cpu.core_count }}
+          {{ $memory :=  $xr.spec.compute.cpu.memory }}
+          {{ $socket :=  $xr.spec.compute.cpu.socket }}
+          {{ $cpu_type :=  $xr.spec.compute.cpu.cpu_type }}
+          {{ $interface :=  $xr.spec.compute.disk.interface }}
+          {{ $datastore_id := $xr.spec.compute.disk.datastore_id }}
+          {{ $iothread :=  $xr.spec.compute.disk.iothread }}
+          {{ $disk_size := $xr.spec.compute.disk.size }}
+          {{ $ipv4 :=  $xr.spec.compute.network.ipv4_addr }}
+          {{ $gateway :=  $xr.spec.compute.network.gateway }}
+          {{ $bridge :=  $xr.spec.compute.network.bridge }}
+          {{ $network_model :=  $xr.spec.compute.network.model }}
+          {{ $vm_id :=  $xr.spec.vmdetails.id }}
+          {{ $vm_name := $xr.spec.vmdetails.vmname }}
+          {{ $vm_username :=  $xr.spec.vmdetails.username }}
+          {{ $vm_password :=  $xr.spec.vmdetails.password }}
+          {{ $cloud_datastore := $xr.spec.cloud.data_storeid }}
+          {{ $iso_url := $xr.spec.cloud.url }}
+          {{ $img_type := $xr.spec.cloud.content_type }}
+          
+          
+          ---
+          apiVersion: tf.upbound.io/v1beta1
+          kind: Workspace
+          metadata:
+            name: vm-{{ $.observed.composite.resource.metadata.name }}
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: create-vm
+          spec:
+            providerConfigRef:
+              name: provider-terraform-config
+            writeConnectionSecretToRef:              
+              name: vm-{{ $.observed.composite.resource.metadata.name }}-conn
+              namespace: {{ $.observed.composite.resource.metadata.namespace }}
+            forProvider:
+              env:
+                - name: TF_VAR_proxmox_endpoint
+                  secretKeyRef:
+                    name: proxmox-creds
+                    namespace: crossplane-system
+                    key: TF_VAR_proxmox_endpoint
+                
+                
+                - name: TF_VAR_datacenter_user
+                  secretKeyRef:
+                    name: proxmox-creds
+                    namespace: crossplane-system
+                    key: TF_VAR_datacenter_user
+                
+                - name: TF_VAR_datacenter_pass
+                  secretKeyRef:
+                    name: proxmox-creds
+                    namespace: crossplane-system
+                    key: TF_VAR_datacenter_pass
+                
+                - name: TF_VAR_proxmox_username
+                  
+                  secretKeyRef:
+                    name: proxmox-creds
+                    namespace: crossplane-system
+                    key: TF_VAR_proxmox_username
+                
+                - name: TF_VAR_proxmox_token
+                  
+                  secretKeyRef:
+                    name: proxmox-creds
+                    namespace: crossplane-system
+                    key: TF_VAR_proxmox_token
+                      
+                - name: HOME
+                  value: /tmp
+              
+              source: Inline
+              module: |
+                
+                provider "proxmox" {
+                    endpoint = var.proxmox_endpoint 
+                    api_token = var.proxmox_token
+                    insecure = true
+                    
+                    ssh {
+                      agent    = false
+                      username = var.datacenter_user
+                      password = var.datacenter_pass
+                    }
+                    
+                }
+
+                
+
+                resource "proxmox_virtual_environment_vm" "pv-1" {
+                    name        = "{{ $vm_name }}"
+                    vm_id       = "{{ $vm_id }}"
+                    node_name   = "pv-node1"
+                    cpu {
+                      cores   = {{ $core_count }}
+                      sockets = {{ $socket }}
+                      type    = "{{ $cpu_type }}"
+                  }
+                  efi_disk {
+                    datastore_id = "{{ $datastore_id }}"
+                    type         = "4m"
+                  }
+                  memory {
+                    dedicated = {{ $memory }}
+                  }
+                  disk {
+                    file_id      = proxmox_virtual_environment_download_file.ubuntu_cloud_image.id
+                    interface    = "{{ $interface }}"     
+                    datastore_id = "{{ $datastore_id }}" 
+                    size         = {{ $disk_size }}  
+                    iothread     = {{ $iothread }}        
+                    file_format  = "raw"
+                  }
+                  # agent {
+                  #   enabled = true  # Matches agent = 1
+                  # }
+                  scsi_hardware = "virtio-scsi-pci"
+                  
+                  initialization {
+                    ip_config {
+                      ipv4 {
+                        address = "{{ $ipv4 }}"
+                        gateway = "{{ $gateway }}"
+                      }
+                    }
+                    user_account {
+                      username = "{{ $vm_username }}" 
+                      password =  "{{ $vm_password }}"
+                      
+                    }
+                  }
+                  
+                  network_device {
+                      model = "{{ $network_model }}"
+                      bridge = "{{ $bridge }}"
+                  }
+                  lifecycle {
+                      ignore_changes = [network_device]
+                  }
+                }
+
+                resource "proxmox_virtual_environment_download_file" "ubuntu_cloud_image" {
+                  content_type = "{{ $img_type }}"
+                  datastore_id = "{{ $cloud_datastore }}"
+                  node_name    = "{{ $vm_name }}"
+                  
+                  url = "{{ $iso_url }}"
+                  overwrite = true 
+                }
+
+                variable "proxmox_endpoint" {
+                  type = string
+                  description = "Proxmox API endpoint"
+                }
+
+                variable "proxmox_token" {
+                  type = string
+                  description = "Proxmox API token"
+                }
+
+                variable "proxmox_username" {
+                  type = string
+                  description = "Proxmox API username"
+                }
+
+                variable "datacenter_user" {
+                  type = string
+                  
+                }
+
+                variable "datacenter_pass" {
+                  type = string
+                  
+                }
+  
+  - step: create-db
+    functionRef:
+      name: function-go-templating
+    input:
+      apiVersion: gotemplating.fn.crossplane.io/v1beta1
+      kind: GoTemplate
+      source: Inline
+      inline:
+        template: |-
+          ---
+
+          {{ $xr := $.observed.composite.resource }}
+
+          {{ $dbname := $xr.spec.db.dbname }}
+          {{ $dbuser := $xr.spec.db.dbuser }}
+          {{ $dbpass := $xr.spec.db.dbpass }}
+
+          ---
+          apiVersion: mysql.sql.crossplane.io/v1alpha1
+          kind: Database
+          metadata:
+            name: {{ $dbname }}
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: create-db
+          spec:
+            providerConfig:
+              name: provider-mysql-config
+            writeConnectionScretToRef:
+              name: db-{{ $.observed.composite.resource.metadata.name }}-conn
+              namespace: {{ $.observed.composite.resource.metadata.namespace }}
+
+            forProvider:
+
+          
+  # - step: automatically-detect-ready-composed-resources
+  #   functionRef:
+  #       name: function-auto-ready
+

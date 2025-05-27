@@ -1,0 +1,18 @@
+#TODO
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  
+  - providers/proxmox/providerconfig.yaml
+  - providers/proxmox/secret.yaml
+  - providers/mysql/providerconfig.yaml
+  - providers/mysql/secret.yaml
+  
+  - definitions/xrd-virtinfra.yaml
+
+  - compositions/composition-vm.yaml
+  - compositions/composition-mysql.yaml
+ 
+  - claims/example-virtinfra-claim.yaml

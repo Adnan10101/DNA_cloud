@@ -23,7 +23,7 @@ spec:
           spec:
             type: object
             properties:
-              vm_details:
+              vmdetails:
                 type: object
                 properties:
                   id:
@@ -96,6 +96,21 @@ spec:
                     required:
                     - ipv4_addr
                     - gateway
+                  
+              cloud:
+                type: object
+                properties:
+                  data_storeid:
+                    type: string
+                    default: local
+                  url:
+                    type: string
+                    default: https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+                  content_type:
+                    type: string
+                    default: iso
+                required:
+                - content_type
 
                       
 
