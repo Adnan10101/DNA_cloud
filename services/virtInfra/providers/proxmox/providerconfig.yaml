@@ -1,0 +1,26 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: provider-terraform-config
+spec:
+  configuration: |
+    terraform {
+      required_providers {
+        proxmox = {
+          source = "bpg/proxmox"
+          version = "~> 0.62.0"
+        }
+      }
+      backend "kubernetes" {
+        secret_suffix     = "provider-proxmox"
+      }
+    }
+  credentials:
+    - source: Secret
+      secretRef:
+        key: credentials
+        name: proxmox-creds
+        namespace: crossplane-system
+      filename: .env
+
+

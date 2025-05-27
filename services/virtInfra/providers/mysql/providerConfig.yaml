@@ -1,0 +1,23 @@
+apiVersion: mysql.sql.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: provider-mysql-config
+  namespace: crossplane-system
+spec:
+  credentials:
+    connectionSecretRef:
+      name: mysql-creds
+      namespace: crossplane-system
+    source: MySQLConnectionSecret
+  tls: custom
+  tlsConfig:
+    caCert:
+      secretRef:
+        key: creds
+        name: mysql-creds
+        namespace: crossplane-system
+    
+    # username: admin
+    # endpoint: 192.168.0.50
+    # port: 3306
+    # database: ""

@@ -4,9 +4,9 @@ metadata:
   name: test-infra
   namespace: string
 spec:
-  vm_details:
+  vmdetails:
     id: 550
-    vmname: test
+    vmname: pv-node1
     username: test
     password: test
   compute:
@@ -17,7 +17,13 @@ spec:
     disk:
       size: 10
     network:
-      ipv4_addr: 192.168.0.10
+      ipv4_addr: 192.168.0.10/24
       gateway: 192.168.0.1
+  cloud:
+    content_type: iso
+  db:
+    dbname: test-db
+    dbuser: test-user
+    dbpass: test-pass
 
 
