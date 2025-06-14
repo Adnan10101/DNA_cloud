@@ -1,0 +1,20 @@
+apiVersion: rds.aws.crossplane.io/v1alpha1
+kind: DBInstance
+metadata:
+  name: example-rds
+spec:
+  forProvider:
+    region: us-east-1
+    dbInstanceClass: db.t3.micro
+    engine: mysql
+    engineVersion: 8.0.33
+    masterUsername: admin
+    autogeneratePassword: true
+    allocatedStorage: 20
+    # masterUserPasswordSecretRef:
+    #   name: <secret-name>
+    #   key: test
+    #   namespace: crossplane-system
+    publiclyAccessible: true
+  providerConfigRef:
+    name: aws-providerconfig

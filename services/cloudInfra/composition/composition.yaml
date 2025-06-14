@@ -1,0 +1,188 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: cloud-infra
+spec:
+  compositeTypeRef:
+    apiVersion: dnacloud.home/v1alpha1
+    kind: xcloudInfra
+  mode: Pipeline
+  pipeline:
+  - step: create-vpc-subnets
+    functionRef:
+      name: function-go-templating
+    input:
+      apiVersion: gotemplating.fn.crossplane.io/v1beta1
+      kind: GoTemplate
+      source: Inline
+      inline:
+        template: |-
+          ---
+          {{ $xr := $.observed.composite.resource }} 
+          {{ $cloudInfraName := $xr.metadata.name }}
+          {{ $cloudInfraNamespace := $xr.metadata.namespace }}
+          {{ $region := $xr.spec.region }}
+          {{ $cidr := $xr.spec.resources.vpc.cidr }}
+          {{ $vpcName := $xr.spec.resources.vpc.name }}
+          {{ $subnetName := $xr.spec.resources.subnet.name }}
+          
+          ---
+          {{ if $.observed.composite.resource.spec.resources.vpc.enabled }}
+          apiVersion: ec2.aws.crossplane.io/v1beta1
+          kind: VPC
+          metadata:
+            name: {{ $cloudInfraName }}-vpc
+            
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: {{ $cloudInfraName }}-vpc
+          spec:
+            forProvider:
+              region: {{ $region }}
+              cidrBlock: {{ $cidr }}
+              tags:
+              - key: Name
+                value: {{ $vpcName }}
+            providerConfigRef:
+              name: aws-providerconfig
+
+          ---
+          apiVersion: ec2.aws.crossplane.io/v1beta1
+          kind: Subnet
+          metadata:
+            name: {{ $cloudInfraName }}-subnet
+            
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: {{ $cloudInfraName }}-subnet
+          spec:
+            forProvider:
+              region: {{ $region }}
+              cidrBlock: {{ $cidr }}
+              vpcIdRef:
+                name: {{ $cloudInfraName }}-vpc
+            providerConfigRef:
+              name: aws-providerconfig
+          {{ end }}
+          
+
+
+  - step: create-resources
+    functionRef: 
+      name: function-go-templating
+    input:
+      apiVersion: gotemplating.fn.crossplane.io/v1beta1
+      kind: GoTemplate
+      source: Inline
+      inline:
+        template: |-
+          ---
+          {{ $xr := $.observed.composite.resource }} 
+          {{ $cloudInfraName := $xr.metadata.name }}
+          {{ $cloudInfraNamespace := $xr.metadata.namespace}}
+          {{ $region := $xr.spec.region }}
+          {{ $bucketName := $xr.spec.resources.bucketName }}
+          {{ $ec2Name := $xr.spec.resources.ec2.instanceName }}
+          {{ $ec2ImageID := $xr.spec.resources.ec2.imageID }}
+          {{ $ec2InstanceType := $xr.spec.resources.ec2.instanceType }}
+          {{ $dbName := $xr.spec.resources.db.dbName }}
+          {{ $dbUsername := $xr.spec.resources.db.username }}
+          {{ $dbPassword := $xr.spec.resources.db.password }}
+          {{ $dbType := $xr.spec.resources.db.dbType }}
+          {{ $dbInstance := $xr.spec.resources.db.instanceClass }}
+          {{ $dbVersion := $xr.spec.resources.db.engineVersion }}
+
+          ---
+          apiVersion: kubernetes.crossplane.io/v1alpha1
+          kind: Object
+          metadata:
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: {{ $cloudInfraName }}-db-creds
+          spec:
+            forProvider:
+              manifest:
+                apiVersion: v1
+                kind: Secret
+                metadata:
+                  name: {{ $cloudInfraName }}-db-creds
+                  namespace: test
+                  annotations:
+                    gotemplating.fn.crossplane.io/composition-resource-name: {{ $cloudInfraName }}-db-creds
+                  
+                type: Opaque
+                stringData:
+                  password: {{ $dbPassword }}
+                
+            providerConfigRef:
+              name: kubernetes-provider
+
+
+          {{ if $.observed.composite.resource.spec.resources.s3.enabled }}
+          ---
+          apiVersion: s3.aws.crossplane.io/v1beta1
+          kind: Bucket
+          metadata:
+            generateName: {{ $bucketName }}- 
+            
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: {{ $cloudInfraName }}-bucket
+          spec:
+            forProvider:
+              locationConstraint: {{ $region }}
+            providerConfigRef:
+              name: aws-providerconfig
+          {{ end }}
+          
+          {{ if $.observed.composite.resource.spec.resources.ec2.enabled }}
+          ---
+          apiVersion: ec2.aws.crossplane.io/v1alpha1
+          kind: Instance
+          metadata:
+            name: {{ $ec2Name }}
+            
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: {{ $ec2Name }}
+          spec:
+            forProvider:
+              instanceType: {{ $ec2InstanceType }}
+              region: {{ $region }}
+              imageId: {{ $ec2ImageID }}  
+              keyName: main-key-d 
+              {{ if $.observed.composite.resource.spec.resources.subnet.enabled }}
+              subnetIdRef:
+                name: {{ $cloudInfraName }}-subnet
+              {{ end }}
+            providerConfigRef:
+              name: aws-providerconfig
+          {{ end }}
+          
+          {{ if $.observed.composite.resource.spec.resources.db.enabled }}
+          ---
+          apiVersion: rds.aws.crossplane.io/v1alpha1
+          kind: DBInstance
+          metadata:
+            name: {{ $dbName }}
+            
+            annotations:
+              gotemplating.fn.crossplane.io/composition-resource-name: {{ $dbName }}
+          spec:
+            forProvider:
+              region: {{ $region }}
+              dbInstanceClass: {{ $dbInstance }}
+              engine: {{ $dbType }}
+              engineVersion: "{{ $dbVersion }}"
+              masterUsername: {{ $dbUsername }}
+              allocatedStorage: 20
+              masterUserPasswordSecretRef:
+                name: {{ $cloudInfraName }}-db-creds
+                key: password
+                namespace: test
+              publiclyAccessible: true
+            providerConfigRef:
+              name: aws-providerconfig
+          {{ end }}
+  
+  # - step: automatically-detect-ready-composed-resources
+  #   functionRef:
+  #     name: function-auto-ready
+
+              
+

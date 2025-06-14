@@ -1,0 +1,17 @@
+apiVersion: ec2.aws.crossplane.io/v1alpha1
+kind: Instance
+metadata:
+  name: example-ec2-instance
+spec:
+  forProvider:
+    instanceType: t2.micro
+    region: us-east-1
+    imageId: ami-0731becbf832f281e  
+    keyName: main-key-d       
+    subnetIdRef:
+      name: example-subnet # specify the name of the subnet when id is not known
+    # networkInterfaces:
+    #   - subnetId: subnet-0bb1c79de3EXAMPLE  
+    #     associatePublicIpAddress: true
+  providerConfigRef:
+    name: aws-providerconfig

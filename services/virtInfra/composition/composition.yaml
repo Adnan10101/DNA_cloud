@@ -203,38 +203,38 @@ spec:
                   
                 }
   
-  - step: create-db
-    functionRef:
-      name: function-go-templating
-    input:
-      apiVersion: gotemplating.fn.crossplane.io/v1beta1
-      kind: GoTemplate
-      source: Inline
-      inline:
-        template: |-
-          ---
+  # - step: create-db
+  #   functionRef:
+  #     name: function-go-templating
+  #   input:
+  #     apiVersion: gotemplating.fn.crossplane.io/v1beta1
+  #     kind: GoTemplate
+  #     source: Inline
+  #     inline:
+  #       template: |-
+  #         ---
 
-          {{ $xr := $.observed.composite.resource }}
+  #         {{ $xr := $.observed.composite.resource }}
 
-          {{ $dbname := $xr.spec.db.dbname }}
-          {{ $dbuser := $xr.spec.db.dbuser }}
-          {{ $dbpass := $xr.spec.db.dbpass }}
+  #         {{ $dbname := $xr.spec.db.dbname }}
+  #         {{ $dbuser := $xr.spec.db.dbuser }}
+  #         {{ $dbpass := $xr.spec.db.dbpass }}
 
-          ---
-          apiVersion: mysql.sql.crossplane.io/v1alpha1
-          kind: Database
-          metadata:
-            name: {{ $dbname }}
-            annotations:
-              gotemplating.fn.crossplane.io/composition-resource-name: create-db
-          spec:
-            providerConfig:
-              name: provider-mysql-config
-            writeConnectionScretToRef:
-              name: db-{{ $.observed.composite.resource.metadata.name }}-conn
-              namespace: {{ $.observed.composite.resource.metadata.namespace }}
+  #         ---
+  #         apiVersion: mysql.sql.crossplane.io/v1alpha1
+  #         kind: Database
+  #         metadata:
+  #           name: {{ $dbname }}
+  #           annotations:
+  #             gotemplating.fn.crossplane.io/composition-resource-name: create-db
+  #         spec:
+  #           providerConfig:
+  #             name: provider-mysql-config
+  #           writeConnectionScretToRef:
+  #             name: db-{{ $.observed.composite.resource.metadata.name }}-conn
+  #             namespace: {{ $.observed.composite.resource.metadata.namespace }}
 
-            forProvider:
+  #           forProvider:
 
           
   # - step: automatically-detect-ready-composed-resources
