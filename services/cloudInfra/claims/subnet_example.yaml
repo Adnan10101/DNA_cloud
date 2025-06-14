@@ -1,0 +1,15 @@
+apiVersion: ec2.aws.crossplane.io/v1beta1
+kind: Subnet
+metadata:
+  name: example-subnet
+spec:
+  forProvider:
+    region: us-east-1     
+    cidrBlock: 10.0.1.0/24
+    availabilityZone: us-east-1a
+    # the vpc ID 
+    # vpcId: 
+    vpcIdRef:
+      name: example-vpc
+  providerConfigRef:
+    name: aws-providerconfig

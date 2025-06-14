@@ -1,0 +1,107 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xcloudinfras.dnacloud.home
+spec:
+  group: dnacloud.home
+  names:
+    kind: xcloudInfra
+    plural: xcloudinfras
+    shortNames:
+    - ci
+  claimNames:
+    kind: cloudInfra
+    plural: cloudinfras
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              region:
+                type: string
+              resources:
+                type: object
+                properties:
+                  s3:
+                    type: object
+                    properties:
+                      enabled: 
+                        type: boolean
+                      bucketName: 
+                        type: string  
+                    required:
+                    - enabled
+                    - bucketName
+
+                  ec2:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      instanceName:
+                        type: string
+                      imageID:
+                        type: string
+                        default: ami-07b7f66b629de9364
+                      instanceType:
+                        type: string
+                        default: t3.micro
+                    required:
+                    - enabled
+                    - instanceName
+                  
+                  db:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      dbName:
+                        type: string
+                      username:
+                        type: string
+                      password:
+                        type: string
+                      instanceClass:
+                        type: string
+                        default: db.t3.micro
+                      dbType:
+                        type: string
+                      engineVersion:
+                        type: string
+                        default: "15"
+                    required:
+                    - enabled
+                    - dbName
+                    - username
+                    - password
+                    - dbType
+                  
+                  vpc:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      cidr:
+                        type: string
+                      name: 
+                        type: string
+                    required:
+                    - enabled
+                    - cidr
+
+                  subnet:
+                    type: object
+                    properties:
+                      enabled: 
+                        type: boolean
+                      name:
+                        type: string
+                    required:
+                    - name
+                    - enabled
