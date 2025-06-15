@@ -33,3 +33,4 @@ data:
         hub     IN      A        HUB_IP    ;
         govee   IN      A        HUB_IP     ;
         homeassistant   IN      A        HUB_IP     ;
+        devnest IN      A        HUB_IP     ;
