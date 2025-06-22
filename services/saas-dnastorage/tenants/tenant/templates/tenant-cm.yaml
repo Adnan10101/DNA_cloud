@@ -1,0 +1,9 @@
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: tenant1-env-configuration
+#   namespace: test-tenant
+# data:
+#   config.env: |
+#     MINIO_BROWSER=on
+#     MINIO_DOMAIN=minio.test-tenant.svc.cluster.local
