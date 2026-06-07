@@ -1,0 +1,35 @@
+========================================================
+  homelab-db deployed successfully!
+========================================================
+
+1. Watch the PostgreSQL cluster come up:
+
+   kubectl get cluster -n {{ .Release.Namespace }} -w
+
+   Wait for: "Cluster in healthy state"
+
+2. Watch all pods:
+
+   kubectl get pods -n {{ .Release.Namespace }} -w
+
+3. Access pgAdmin via port-forward (no ingress needed):
+
+   kubectl port-forward svc/{{ .Release.Name }}-pgadmin 8080:80 -n {{ .Release.Namespace }}
+
+   Then open: http://localhost:8080
+   Email:     {{ .Values.pgadmin.email }}
+
+4. Connect pgAdmin to PostgreSQL (add a new server):
+
+   Host:     {{ .Values.cluster.name }}-rw.{{ .Release.Namespace }}.svc.cluster.local
+   Port:     5432
+   Database: {{ .Values.cluster.database }}
+   Username: {{ .Values.cluster.credentials.username }}
+
+5. PostgreSQL service endpoints for your apps:
+
+   Read/Write:  {{ .Values.cluster.name }}-rw.{{ .Release.Namespace }}.svc.cluster.local:5432
+   Read Only:   {{ .Values.cluster.name }}-ro.{{ .Release.Namespace }}.svc.cluster.local:5432
+   Round-robin: {{ .Values.cluster.name }}-r.{{ .Release.Namespace }}.svc.cluster.local:5432
+
+========================================================
