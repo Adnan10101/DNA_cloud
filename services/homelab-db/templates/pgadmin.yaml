@@ -1,0 +1,141 @@
+{{- if .Values.pgadmin.enabled }}
+---
+# ------------------------------------------------------------------
+# Credentials secret
+# ------------------------------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Release.Name }}-pgadmin-creds
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homelab-db.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+stringData:
+  PGADMIN_DEFAULT_EMAIL: {{ .Values.pgadmin.email | quote }}
+  PGADMIN_DEFAULT_PASSWORD: {{ .Values.pgadmin.password | quote }}
+---
+# ------------------------------------------------------------------
+# PVC — stores pgAdmin server registrations and config
+# ------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-pgadmin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homelab-db.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.pgadmin.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.pgadmin.persistence.size }}
+---
+# ------------------------------------------------------------------
+# Deployment
+# ------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-pgadmin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homelab-db.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pgadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "homelab-db.selectorLabels" (dict "root" . "component" "pgadmin") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "homelab-db.selectorLabels" (dict "root" . "component" "pgadmin") | nindent 8 }}
+    spec:
+      securityContext:
+        fsGroup: 5050
+      containers:
+        - name: pgadmin
+          image: "{{ .Values.pgadmin.image.repository }}:{{ .Values.pgadmin.image.tag }}"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-pgadmin-creds
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
+          resources:
+            requests:
+              memory: {{ .Values.pgadmin.resources.requests.memory }}
+              cpu: {{ .Values.pgadmin.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.pgadmin.resources.limits.memory }}
+              cpu: {{ .Values.pgadmin.resources.limits.cpu }}
+      volumes:
+        - name: pgadmin-data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pgadmin
+---
+# ------------------------------------------------------------------
+# Service
+# ------------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-pgadmin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homelab-db.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pgadmin
+spec:
+  type: NodePort
+  selector:
+    {{- include "homelab-db.selectorLabels" (dict "root" . "component" "pgadmin") | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      nodePort: 30080
+---
+# ------------------------------------------------------------------
+# Ingress
+# ------------------------------------------------------------------
+{{- if .Values.pgadmin.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-pgadmin
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homelab-db.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pgadmin
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 10m
+spec:
+  ingressClassName: {{ .Values.pgadmin.ingress.className }}
+  rules:
+    - host: {{ .Values.pgadmin.ingress.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-pgadmin
+                port:
+                  name: http
+  {{- if .Values.pgadmin.ingress.tls }}
+  tls:
+    - hosts:
+        - {{ .Values.pgadmin.ingress.host }}
+      secretName: {{ .Release.Name }}-pgadmin-tls
+  {{- end }}
+{{- end }}
+{{- end }}

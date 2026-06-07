@@ -1,0 +1,85 @@
+# =============================================================
+# homelab-db — Default Values
+#
+# DO NOT put real passwords here.
+# Create a values.override.yaml for secrets and keep it out
+# of version control (.gitignore includes it by default).
+# =============================================================
+
+
+# ---------------------------------------------------------------
+# PostgreSQL Cluster
+# ---------------------------------------------------------------
+cluster:
+  # Name used for the Cluster CR and all derived service names:
+  #   <name>-rw  → primary read/write
+  #   <name>-ro  → replica read only
+  #   <name>-r   → round robin
+  name: postgres
+
+  # Postgres major version image
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+
+  # Starting with 2 so the cluster is ready when Node 2 joins.
+  # On a single node both instances will land on the same node
+  # until Node 2 is added — this is fine, data is safe.
+  instances: 2
+
+  # Database and owner created on first boot
+  database: appdb
+  owner: dna-db-app
+
+  # Override these in values.override.yaml — never commit real passwords
+  credentials:
+    username: dna-db-app
+    password: ""                  # REQUIRED — set in values.override.yaml
+
+  storage:
+    size: 10Gi
+    storageClass: longhorn        # Longhorn dynamic provisioner
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+  # PostgreSQL runtime parameters
+  postgresql:
+    max_connections: "100"
+    shared_buffers: "128MB"
+    work_mem: "4MB"
+
+# ---------------------------------------------------------------
+# pgAdmin
+# ---------------------------------------------------------------
+pgadmin:
+  enabled: true
+
+  image:
+    repository: dpage/pgadmin4
+    tag: "8"
+
+  # Login credentials — override in values.override.yaml
+  email: admin@homelab.local
+  password: ""                    # REQUIRED — set in values.override.yaml
+
+  persistence:
+    size: 1Gi
+    storageClass: longhorn
+
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 200m
+
+  ingress:
+    enabled: true
+    className: nginx
+    host: pgadmin.dnaserver.local
+    tls: false                    # set true when cert-manager is configured

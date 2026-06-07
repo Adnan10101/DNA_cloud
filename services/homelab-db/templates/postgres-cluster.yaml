@@ -1,0 +1,35 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ .Values.cluster.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homelab-db.labels" . | nindent 4 }}
+spec:
+  instances: {{ .Values.cluster.instances }}
+  imageName: {{ .Values.cluster.imageName }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.cluster.database }}
+      owner: {{ .Values.cluster.owner }}
+      secret:
+        name: {{ .Release.Name }}-postgres-creds
+
+  storage:
+    size: {{ .Values.cluster.storage.size }}
+    storageClass: {{ .Values.cluster.storage.storageClass }}
+
+  resources:
+    requests:
+      memory: {{ .Values.cluster.resources.requests.memory }}
+      cpu: {{ .Values.cluster.resources.requests.cpu }}
+    limits:
+      memory: {{ .Values.cluster.resources.limits.memory }}
+      cpu: {{ .Values.cluster.resources.limits.cpu }}
+
+  postgresql:
+    parameters:
+      max_connections: {{ .Values.cluster.postgresql.max_connections | quote }}
+      shared_buffers: {{ .Values.cluster.postgresql.shared_buffers | quote }}
+      work_mem: {{ .Values.cluster.postgresql.work_mem | quote }}
