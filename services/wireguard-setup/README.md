@@ -9,14 +9,7 @@ Goal: a repeatable WireGuard setup for Internet → VPS → Home → Laptop usin
 
 ---
 
-## Create interface
-```bash
-ip link add dev wg0 type wireguard
-ip address add dev wg0 <ip-address>
-ip link set up dev wg0
-```
-
-## Common: generate keys (on each device)
+# Common: generate keys (on each device) (MUST)
 ```bash
 sudo mkdir -p /etc/wireguard
 cd /etc/wireguard
@@ -26,15 +19,48 @@ wg genkey | tee privatekey | wg pubkey > publickey
 wg set wg0 private-key /etc/wireguard/privatekey
 ```
 
+# Method 1 (Linux commands not persistent)
+
+## Create interface
+```bash
+ip link add dev wg0 type wireguard
+ip address add dev wg0 <ip-address>
+wg set wg0 private-key ./privatekey
+ip link set up dev wg0
+```
+
 Check status:
 ```bash
 wg show
 ip a show wg0
 ```
 
-## Method A — Flat single-subnet (Recommended)
-- VPN subnet: `10.8.0.0/24`
-- Peers: VPS=10.8.0.1, Home=10.8.0.2, Laptop=10.8.0.3
+## Set Peers
+```bash 
+wg set wg0 peer <public-key-of-peer> allowed-ips <wireguard ip-of-peer-or-subnet> endpoint <main-interface-ip-of-peer>:<wireguard-port-of-peer>
+```
+
+Example:
+
+- VPN subnet: `192.168.0.0/24`
+- Peers: 
+    1. VPS=192.168.0.1, PUBLIC_KEY = ABCDE, ENS0 = 10.0.0.128, WIREGUARD-PORT = 39009
+    2. Home=192.168.0.2, PUBLIC_KEY = XYZ, ENS0 = 10.0.0.40, WIREGUARD-PORT = 38990
+
+```bash
+Peering Home with VPS
+wg set wg0 peer XYZ allowed-ips 192.168.0.2/32 endpoint 10.0.0.40:38990
+
+Peering VPS with Home
+wg set wg0 peer ABCDE allowed-ips 192.168.0.1/32 endpoint 10.0.0.128:39009
+```
+
+## Test
+```bash
+ping 192.168.0.1 or ping 192.168.0.2
+```
+# Method 2 (Persistent, wg-quick)
+Create a wg0.conf file in /etc/wireguard/
 
 ### Example `wg0.conf` — VPS
 ```ini
@@ -84,43 +110,15 @@ AllowedIPs = 10.8.0.0/24
 PersistentKeepalive = 25
 ```
 
-Notes:
+## Bring it up
+```bash
+sudo wg-quick up wg0
+```
+
+Notes (Optional):
 - Laptop uses VPS as endpoint so it can join via the public entrypoint.
 - Add Laptop peer to VPS and Home (public key + `AllowedIPs=10.8.0.3/32`) so both know the route.
 
-### Add peer dynamically (wg set)
-```bash
-# on Home (add laptop)
-wg set wg0 peer <LAPTOP_PUBLIC_KEY> allowed-ips 10.8.0.3/32
-
-# on VPS (add laptop)
-wg set wg0 peer <LAPTOP_PUBLIC_KEY> allowed-ips 10.8.0.3/32
-```
-
-### Enable IP forwarding on Home (services live here)
-```bash
-sudo sysctl -w net.ipv4.ip_forward=1
-# to persist: set net.ipv4.ip_forward=1 in /etc/sysctl.conf or /etc/sysctl.d/*.conf
-```
-
-### Minimal firewall tips
-- On VPS (allow WG, restrict forwarding to Home):
-```bash
-sudo iptables -A INPUT -p udp --dport 51820 -j ACCEPT
-sudo iptables -A FORWARD -i wg0 -d 10.8.0.2 -j ACCEPT
-sudo iptables -A FORWARD -j DROP
-```
-- On Home (permit WG and enforce internal policies):
-```bash
-sudo iptables -A INPUT -i wg0 -j ACCEPT
-sudo iptables -A FORWARD -i wg0 -j ACCEPT
-```
-
-### Start & persist
-```bash
-sudo systemctl enable wg-quick@wg0
-sudo systemctl start wg-quick@wg0
-```
 
 ### Quick verification
 ```bash
@@ -131,19 +129,12 @@ ping 10.8.0.2   # Home
 # from Home
 ping 10.8.0.3   # Laptop
 ```
+### After Wireguard setup
+Once ping from device to VPS and VPS to server works, enable ip_forward = 1
+and then add
 
----
-
-## Method B — Hub-and-Spoke (Advanced)
-Use only when you need segmentation (edge vs internal). More complex and easy to misconfigure.
-
-- Example subnets:
-  - VPS ↔ Home = `10.8.0.0/24` (VPS:10.8.0.1, Home:10.8.0.2)
-  - Home ↔ Laptop = `10.9.0.0/24` (Home:10.9.0.1, Laptop:10.9.0.2)
-
-Key points:
-- Home must forward between subnets (enable `net.ipv4.ip_forward`).
-- VPS must include `10.9.0.0/24` in Home's `AllowedIPs` so traffic is handed to Home.
-- Optionally NAT laptop behind Home if you want Home to hide internal addresses:
 ```bash
-# on Home (masquerade 10.9 going out to internet via eth0)
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT
+```
+To VPS [Interface]
