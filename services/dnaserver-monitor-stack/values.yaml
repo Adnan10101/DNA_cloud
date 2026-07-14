@@ -1,0 +1,29 @@
+# example of values.yaml file for grafana
+
+grafana:
+  adminPassword: "<some-unique-random-password>"
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 5Gi
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          resources:
+            requests:
+              storage: 2Gi
