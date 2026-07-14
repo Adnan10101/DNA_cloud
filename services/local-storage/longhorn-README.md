@@ -88,6 +88,27 @@ Longhorn detects the new node automatically. To enable replication:
 
 ---
 
+## To view longhorn UI in grafana apply the following servicemonitor yaml
+```base
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: longhorn-prometheus-servicemonitor
+  namespace: longhorn-system
+  labels:
+    <whatever the 'prometheus' serviceMonitorSelector label is>
+spec:
+  selector:
+    matchLabels:
+      app: longhorn-manager
+  namespaceSelector:
+    matchNames:
+    - longhorn-system
+  endpoints:
+  - port: manager
+
+```
+
 ## Upgrade
 
 ```bash
