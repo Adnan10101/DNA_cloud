@@ -292,6 +292,8 @@ Useful queries:
 
 ---
 
+Note: Apply all the alerts under alerts/ after setting up prometheus/grafana. 
+
 
 ## Useful Commands
 
