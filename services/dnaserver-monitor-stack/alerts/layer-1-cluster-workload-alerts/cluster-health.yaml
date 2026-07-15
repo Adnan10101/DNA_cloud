@@ -49,10 +49,14 @@ spec:
           deployment="coredns"
         }
       for: 5m
+      labels:
+        severity: critical
     
     - alert: KubeStateMetricsDown
       expr:
         up{job="kube-state-metrics"} == 0
+      labels:
+        severity: critical
 
     - alert: CalicoNodeDown
       expr:
@@ -60,3 +64,5 @@ spec:
           namespace="calico-system",
           daemonset="calico-node"
         } > 0
+      labels:
+        severity: critical
