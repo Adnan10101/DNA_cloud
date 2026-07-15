@@ -1,0 +1,155 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: application-workload-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+
+spec:
+  groups:
+
+  - name: application-workload.rules
+
+    rules:
+
+    # Application has no running replicas
+    - alert: ApplicationUnavailable
+
+      expr: |
+        (
+          kube_deployment_status_replicas_available == 0
+          and
+          kube_deployment_spec_replicas > 0
+        )
+        *
+        on(namespace,deployment)
+        group_left(label_monitoring)
+        kube_deployment_labels{
+          label_monitoring="enabled"
+        }
+
+      for: 5m
+
+      labels:
+        severity: critical
+
+      annotations:
+        summary: Application unavailable
+
+        description: >
+          Deployment {{ $labels.namespace }}/{{ $labels.deployment }}
+          has zero available replicas.
+
+
+    # Deployment cannot reach desired replicas
+    - alert: ApplicationReplicaMismatch
+
+      expr: |
+        (
+          kube_deployment_spec_replicas
+          !=
+          kube_deployment_status_replicas_available
+        )
+        *
+        on(namespace,deployment)
+        group_left(label_monitoring)
+        kube_deployment_labels{
+          label_monitoring="enabled"
+        }
+
+      for: 10m
+
+      labels:
+        severity: warning
+
+      annotations:
+        summary: Application replica mismatch
+
+        description: >
+          Deployment {{ $labels.namespace }}/{{ $labels.deployment }}
+          does not have the desired number of replicas.
+
+
+    # Pod crash looping
+    - alert: ApplicationPodCrashLooping
+
+      expr: |
+        kube_pod_container_status_waiting_reason{
+          reason="CrashLoopBackOff"
+        }
+        *
+        on(namespace,pod)
+        group_left(label_monitoring)
+        kube_pod_labels{
+          label_monitoring="enabled"
+        }
+
+      for: 5m
+
+      labels:
+        severity: critical
+
+      annotations:
+        summary: Application pod crash looping
+
+        description: >
+          Application pod {{ $labels.namespace }}/{{ $labels.pod }}
+          is crash looping.
+
+
+    # Application container OOM
+    - alert: ApplicationOOMKilled
+
+      expr: |
+        kube_pod_container_status_last_terminated_reason{
+          reason="OOMKilled"
+        }
+        *
+        on(namespace,pod)
+        group_left(label_monitoring)
+        kube_pod_labels{
+          label_monitoring="enabled"
+        }
+
+      for: 1m
+
+      labels:
+        severity: critical
+
+      annotations:
+        summary: Application killed by OOM
+
+        description: >
+          Container {{ $labels.container }}
+          in {{ $labels.namespace }}/{{ $labels.pod }}
+          was killed due to memory exhaustion.
+
+
+    # Too many restarts
+    - alert: ApplicationRestartingFrequently
+
+      expr: |
+        increase(
+          kube_pod_container_status_restarts_total[15m]
+        )
+        *
+        on(namespace,pod)
+        group_left(label_monitoring)
+        kube_pod_labels{
+          label_monitoring="enabled"
+        }
+        > 5
+
+      for: 5m
+
+      labels:
+        severity: warning
+
+      annotations:
+        summary: Application restarting frequently
+
+        description: >
+          Application pod {{ $labels.namespace }}/{{ $labels.pod }}
+          restarted more than 5 times in 15 minutes.

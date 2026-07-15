@@ -1,0 +1,123 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: resource-usage
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+  - name: resource-usage.rules
+    rules:
+
+    - alert: HighCPUUsage
+      expr: |
+        (
+          100 -
+          (
+            avg by(instance)(
+              rate(node_cpu_seconds_total{mode="idle"}[5m])
+            ) * 100
+          )
+        ) > 80
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: High CPU usage
+        description: CPU usage on {{ $labels.instance }} is above 80%.
+
+    - alert: CriticalCPUUsage
+      expr: |
+        (
+          100 -
+          (
+            avg by(instance)(
+              rate(node_cpu_seconds_total{mode="idle"}[5m])
+            ) * 100
+          )
+        ) > 95
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: Critical CPU usage
+        description: CPU usage on {{ $labels.instance }} is above 95%.
+
+    - alert: HighMemoryUsage
+      expr: |
+        (
+          1 -
+          (
+            node_memory_MemAvailable_bytes
+            /
+            node_memory_MemTotal_bytes
+          )
+        ) * 100 > 80
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: High memory usage
+        description: Memory usage on {{ $labels.instance }} is above 80%.
+
+    - alert: CriticalMemoryUsage
+      expr: |
+        (
+          1 -
+          (
+            node_memory_MemAvailable_bytes
+            /
+            node_memory_MemTotal_bytes
+          )
+        ) * 100 > 95
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Critical memory usage
+        description: Memory usage on {{ $labels.instance }} is above 95%.
+
+    - alert: HighDiskUsage
+      expr: |
+        (
+          1 -
+          (
+            node_filesystem_avail_bytes{
+              mountpoint="/"
+            }
+            /
+            node_filesystem_size_bytes{
+              mountpoint="/"
+            }
+          )
+        ) * 100 > 80
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: High disk usage
+        description: Disk usage on {{ $labels.instance }} is above 80%.
+
+    - alert: CriticalDiskUsage
+      expr: |
+        (
+          1 -
+          (
+            node_filesystem_avail_bytes{
+              mountpoint="/"
+            }
+            /
+            node_filesystem_size_bytes{
+              mountpoint="/"
+            }
+          )
+        ) * 100 > 90
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Critical disk usage
+        description: Disk usage on {{ $labels.instance }} is above 90%.
+    
+    # add alerts for networking probably

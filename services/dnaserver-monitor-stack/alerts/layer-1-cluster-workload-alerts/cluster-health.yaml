@@ -1,0 +1,62 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cluster-health
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+  - name: cluster-health.rules
+    rules:
+
+    - alert: NodeNotReady
+      expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Node not ready
+        description: Node {{ $labels.node }} has been NotReady for more than 5 minutes.
+
+    - alert: NodeUnschedulable
+      expr: kube_node_spec_unschedulable == 1
+      for: 10m
+      labels:
+        severity: warning
+      annotations:
+        summary: Node unschedulable
+        description: Node {{ $labels.node }} is marked unschedulable.
+
+    - alert: KubernetesAPIDown
+      expr: up{job="apiserver"} == 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: Kubernetes API unavailable
+        description: Prometheus cannot scrape the Kubernetes API server.
+    
+    - alert: CoreDNSUnavailable
+      expr: |
+        kube_deployment_status_replicas_available{
+          namespace="kube-system",
+          deployment="coredns"
+        }
+        <
+        kube_deployment_spec_replicas{
+          namespace="kube-system",
+          deployment="coredns"
+        }
+      for: 5m
+    
+    - alert: KubeStateMetricsDown
+      expr:
+        up{job="kube-state-metrics"} == 0
+
+    - alert: CalicoNodeDown
+      expr:
+        kube_daemonset_status_number_unavailable{
+          namespace="calico-system",
+          daemonset="calico-node"
+        } > 0
