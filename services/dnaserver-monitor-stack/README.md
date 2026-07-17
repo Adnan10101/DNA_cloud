@@ -366,9 +366,11 @@ Any Deployment or workload that includes this label will automatically be includ
 
 add the following to the Kubernetes workload manifest (Pod and Deployment):
 
+```bash
 metadata:
   labels:
     monitoring: enabled
+```
 
 Internally, kube-state-metrics exposes Kubernetes labels as Prometheus metric labels with a label_ prefix. For example, monitoring=enabled becomes label_monitoring="enabled" in Prometheus, which is used by the alerting rules to identify monitored applications. (This is some important info incase I forget. Looking at the layer-2 alerts I can define any number of namespaces I want in the future but for now it is only "monitoring=enabled")
 
