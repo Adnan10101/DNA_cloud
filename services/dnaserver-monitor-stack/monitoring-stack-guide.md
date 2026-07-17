@@ -94,6 +94,7 @@ helm repo update
 ```
 
 Create values file:
+(or copy from the values-sample.yaml)
 
 ```bash
 cat << 'EOF' > monitoring-values.yaml
@@ -183,7 +184,7 @@ loki-promtail-xxx   1/1   Running  (one per node, so 2 total)
 ---
 
 ### Step 3 — Connect Loki to Grafana
-
+On Grafana UI do the following:
 ```
 Grafana → Connections → Data Sources → Add new data source
 Type: Loki
@@ -194,7 +195,7 @@ Save & Test → should say "Data source connected"
 
 ---
 
-### Step 4 — Enable Longhorn Metrics (TBD)
+### Step 4 — Enable Longhorn Metrics
 
 Prometheus needs a ServiceMonitor to know where to scrape Longhorn metrics:
 
@@ -231,7 +232,7 @@ kubectl port-forward -n monitoring \
 
 ---
 
-## Accessing the Tools (TBD)
+## Accessing the Tools
 
 All tools are accessed via port-forward. Need to set up ingress later for permanent URLs.
 
@@ -294,6 +295,82 @@ Useful queries:
 
 Note: Apply all the alerts under alerts/ after setting up prometheus/grafana. 
 
+
+## Alerts setup
+Currently I set up Alerts using PrometheusRules CR (check alerts-setup/alert-rules to see a bunch of rules at different layers)
+
+To apply them (if im being lazy)
+```bash
+kc apply -f alerts-setup/alert-rules/layer-0-node-alerts/resource-usage.yaml
+
+kc apply -f alerts-setup/alert-rules/layer-1-cluster-workload-alerts/cluster-health.yaml
+
+kc apply -f alerts-setup/alert-rules/layer-2-app-workload-alerts/deployment-pod-alerts.yaml
+
+```
+and to redirect it to a channel (currently configuration setup is done with Gmail) add the "config" part to the helm values of prometheus-grafana stack (or just look at values-sample.yaml for better understanding)
+
+```bash
+
+alertmanager:
+  alertmanagerSpec:
+    secrets:
+      - <secret-name>
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          resources:
+            requests:
+              storage: 2Gi
+  config:
+    global:
+      smtp_auth_password_file: /etc/alertmanager/secrets alertmanager-smtp-secret/password
+      smtp_auth_username: <email addr>
+      smtp_from: <email addr>
+      smtp_require_tls: true
+      smtp_smarthost: smtp.gmail.com:587
+    route:
+      receiver: email-notifications
+      routes:
+      - receiver: "null"
+        matchers:
+        - alertname = "Watchdog"
+    receivers:
+    - name: email-notifications
+      email_configs:
+      - to: <email addr>
+    - name: "null"
+
+```
+Dont forget to apply the damn secret (just look under alerts-setup/alert-external-channel/gmail/secret-sample.yaml for gmail setup):
+```bash
+kubectl apply -f - <<EOF 
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: <secret-name>
+  namespace: monitoring
+type: Opaque
+stringData:
+  user: <gmail.com>
+  password: <some-password>
+EOF
+```
+
+### **IMPORTANT NOTE**
+Application-level alerts (Layer 2) are enabled using the Kubernetes label monitoring=enabled. Meaning, this is a one shop stop for all **future apps** that will be required to monitor. (Probably can add more into this).
+
+Any Deployment or workload that includes this label will automatically be included in Prometheus application health alerts such as application unavailability, replica mismatches, CrashLoopBackOffs, OOM kills, and excessive restarts.
+
+add the following to the Kubernetes workload manifest (Pod and Deployment):
+
+metadata:
+  labels:
+    monitoring: enabled
+
+Internally, kube-state-metrics exposes Kubernetes labels as Prometheus metric labels with a label_ prefix. For example, monitoring=enabled becomes label_monitoring="enabled" in Prometheus, which is used by the alerting rules to identify monitored applications. (This is some important info incase I forget. Looking at the layer-2 alerts I can define any number of namespaces I want in the future but for now it is only "monitoring=enabled")
 
 ## Useful Commands
 

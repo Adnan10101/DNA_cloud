@@ -1,0 +1,62 @@
+# example of values.yaml file for grafana
+#  <some-unique-random-password>
+grafana:
+  adminPassword: <some-random-password>
+  persistence:
+    enabled: true
+    storageClassName: longhorn
+    size: 5Gi
+  grafana.ini:
+    smtp:
+      enabled: true
+      host: smtp.gmail.com:587
+      user: <email addr>
+      from_address: <email addr>
+      from_name: <any random Grafana alert name>
+      skip_verify: false
+      startTLS_policy: MandatoryStartTLS
+  smtp:
+    existingSecret: <secret-name>
+    userKey: user
+    passwordKey: password
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  alertmanagerSpec:
+    secrets:
+      - alertmanager-smtp-secret
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          resources:
+            requests:
+              storage: 2Gi
+  config:
+    global:
+      smtp_auth_password_file: /etc/alertmanager/secrets/alertmanager-smtp-secret/password
+      smtp_auth_username: <email addr>
+      smtp_from: <email addr>
+      smtp_require_tls: true
+      smtp_smarthost: smtp.gmail.com:587
+    route:
+      receiver: email-notifications
+      routes:
+      - receiver: "null"
+        matchers:
+        - alertname = "Watchdog"
+    receivers:
+    - name: email-notifications
+      email_configs:
+      - to: <email addr>
+    - name: "null"
