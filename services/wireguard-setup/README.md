@@ -39,6 +39,8 @@ ip a show wg0
 ```bash 
 wg set wg0 peer <public-key-of-peer> allowed-ips <wireguard ip-of-peer-or-subnet> endpoint <main-interface-ip-of-peer>:<wireguard-port-of-peer>
 ```
+Powerful VPN feature: 
+
 
 Example:
 
@@ -72,7 +74,7 @@ PrivateKey = <VPS_PRIVATE_KEY>
 # peer: Home
 [Peer]
 PublicKey = <HOME_PUBLIC_KEY>
-AllowedIPs = 10.8.0.2/32
+AllowedIPs = 10.8.0.2/32, 10.0.0.70/32, <any-other-ips-that-needs-to-pass-through-this-interface>
 
 # peer: Laptop
 [Peer]
