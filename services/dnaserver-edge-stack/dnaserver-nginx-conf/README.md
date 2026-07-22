@@ -17,7 +17,7 @@ MetalLB, or firewall rules — just the steps below. (reminder to my future self
    spec:
      ingressClassName: nginx
      rules:
-       - host: myapp.dnaserver.com
+       - host: myapp.dna-server.com
          http:
            paths:
              - path: /
