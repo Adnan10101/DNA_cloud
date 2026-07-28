@@ -96,13 +96,13 @@ Installed as a `LoadBalancer` Service, requesting the MetalLB IP above:
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-  -n ingress --create-namespace \
+  -n ingress-nginx --create-namespace \
   --set controller.service.loadBalancerIP=10.0.0.70
 ```
 
 Verify:
 ```bash
-kubectl get svc -n ingress
+kubectl get svc -n ingress-nginx
 # EXTERNAL-IP should show 10.0.0.70
 ```
 
