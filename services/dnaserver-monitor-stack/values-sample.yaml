@@ -1,6 +1,8 @@
 # example of values.yaml file for grafana
 #  <some-unique-random-password>
 grafana:
+  deploymentStrategy:
+    type: Recreate
   adminPassword: <some-random-password>
   persistence:
     enabled: true
@@ -33,6 +35,7 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    externalUrl: "https://alertmanager.dnaserver.com"
     secrets:
       - alertmanager-smtp-secret
     storage:

@@ -99,6 +99,8 @@ Create values file:
 ```bash
 cat << 'EOF' > monitoring-values.yaml
 grafana:
+  deploymentStrategy:
+    type: Recreate
   adminPassword: "changeme"
   persistence:
     enabled: true
@@ -424,5 +426,12 @@ kubectl get secret -n monitoring monitoring-grafana \
   -o jsonpath="{.data.admin-password}" | base64 -d && echo
 ```
 
+### Reset Grafana Password
+```bash
+kubectl get pods -n monitoring | grep grafana
+
+kubectl exec -it <pod-name>  -n monitoring -- grafana cli admin reset-admin-password <super-strong-password>
+
+```
 ---
 
