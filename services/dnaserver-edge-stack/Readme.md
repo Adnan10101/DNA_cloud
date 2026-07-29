@@ -3,6 +3,8 @@
 Documents how services running in the home Kubernetes cluster (e.g. Grafana)
 are exposed to the internet through Linode
 
+### NOTE: FOR PER APP INGRESS DEPLOYMENT REFER TO THE README.md FILE UNDER dnaserver-nginx-conf, WHERE I EXPLAIN THE STEP BY STEP PROCESS TO DEPLOY AN APP. THIS README IS THE OVERALL SETUP DONE. 
+
 ## Architecture
 
 ```
