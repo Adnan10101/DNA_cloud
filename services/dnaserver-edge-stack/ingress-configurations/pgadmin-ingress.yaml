@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pgadmin-ingress
+  namespace: database
+spec:
+  ingressClassName: nginx-internal  
+  rules:
+    - host: pgadmin.internal.dna-server.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homelab-db-pgadmin
+                port:
+                  number: 80

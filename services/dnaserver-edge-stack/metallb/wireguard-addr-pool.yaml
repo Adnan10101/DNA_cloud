@@ -1,8 +1,9 @@
- apiVersion: metallb.io/v1beta1
+apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
   name: wireguard-pool
   namespace: metallb-system
 spec:
   addresses:
-  - 10.0.0.70/32
+  - 10.0.0.70/32 # external hosts
+  - 10.0.0.71/32 # internal hosts only

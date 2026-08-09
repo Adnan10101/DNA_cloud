@@ -1,0 +1,21 @@
+controller:
+  replicaCount: 2
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - controller
+          topologyKey: kubernetes.io/hostname
+  service:
+    loadBalancerIP: 10.0.0.71
+  ingressClassResource:
+    name: nginx-internal
+    controllerValue: "k8s.io/internal-ingress-nginx"
+    default: false
+  electionID: internal-ingress-controller-leader
+
+fullnameOverride: ingress-nginx-internal

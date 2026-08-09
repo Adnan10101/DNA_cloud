@@ -64,8 +64,8 @@ metadata:
   name: wireguard-pool
   namespace: metallb-system
 spec:
-  addresses:
-    - 10.0.0.70/32
+  - 10.0.0.70/32 # external hosts
+  - 10.0.0.71/32 # internal hosts only
     # add more ips for other protocols (maybe smtp for fun?)
 ```
 
@@ -90,7 +90,7 @@ spec:
 > HTTP hostname routing (e.g. raw TCP like SMTP), or via ingress-nginx's
 > TCP/UDP passthrough instead.
 
-### 2. ingress-nginx
+### 2. ingress-nginx (external)
 
 Installed as a `LoadBalancer` Service, requesting the MetalLB IP above:
 
@@ -99,7 +99,16 @@ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
   -n ingress-nginx --create-namespace \
-  --set controller.service.loadBalancerIP=10.0.0.70
+  --set controller.service.loadBalancerIP=10.0.0.70 \
+  --set controller.replicaCount=2   \
+  --set controller.podAntiAffinity.enabled=true
+
+```
+
+or
+```bash
+helm upgrade ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f ingress-nginx-values.yaml
+
 ```
 
 Verify:
@@ -222,6 +231,21 @@ sudo systemctl reload nginx
 `A` record: `grafana.dnaserver.com` → Linode's public IP.
 
 ---
+
+### ingress-nginx (internal apps only)
+A second, independent ingress-nginx release for apps that should be LAN reachable but never internet-reachable (e.g. pgAdmin, or anything managing raw infrastructure credentials).
+
+```bash
+helm install ingress-nginx-internal ingress-nginx/ingress-nginx \
+  -n ingress-nginx-internal --create-namespace \
+  -f ingress-nginx-internal-values.yaml
+
+```
+fullnameOverride, a distinct electionID, and a distinct ingressClassResource.name are required -- without them the two releases' resources (Deployment names, leader-election lease, IngressClass) collide, since they'd otherwise generate identical default names.
+
+Apps needing internal-only access use ingressClassName: nginx-internal instead of nginx.
+
+#### Note: Since the current cluster has no DNS in place i manually edited /etc/hosts on laptop: 10.0.0.71 pgadmin.internal.dna-server.com. Small work around for now, will fix later 
 
 ## Adding a new app later (checklist)
 
