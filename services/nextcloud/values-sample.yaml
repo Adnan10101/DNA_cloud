@@ -1,0 +1,37 @@
+nextcloud:
+  host: files.dna-server.com
+  username: admin
+  password: changeme-then-rotate-in-ui   # only used on very first init -- see section 6
+  configs:
+    custom.config.php: |
+      <?php
+      $CONFIG = array(
+        'trusted_domains' => array(
+          $_ENV['NEXTCLOUD_TRUSTED_DOMAINS'],
+        ),
+      );
+
+internalDatabase:
+  enabled: false
+
+externalDatabase:
+  enabled: true
+  type: postgresql
+  host: postgres-rw.database.svc.cluster.local
+  database: nextcloud
+  existingSecret:
+    enabled: true
+    secretName: nextcloud-db-credentials
+    usernameKey: username
+    passwordKey: password
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  size: 100Gi
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false   # managed manually, matching the rest of the stack
