@@ -1,0 +1,21 @@
+isClusterService: false
+
+replicaCount: 2
+
+serviceType: LoadBalancer
+
+service:
+  loadBalancerIP: 10.0.0.72
+
+servers:
+  - zones:
+      - zone: .
+    port: 53
+    plugins:
+      - name: errors
+      - name: health
+      - name: ready
+      - name: hosts
+        parameters: /etc/coredns/hosts
+      - name: reload
+      - name: cache

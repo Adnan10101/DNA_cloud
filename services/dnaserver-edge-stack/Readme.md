@@ -193,7 +193,8 @@ sudo iptables -A FORWARD -i eno1 -o wg0 -m state --state RELATED,ESTABLISHED -j 
 > These iptables rules are not persistent by default — add
 > `iptables-persistent` (or equivalent) so they survive a reboot.
 
-### 6. Linode nginx reverse proxy (TBD on dna-nginx-server)
+### 6. Linode nginx reverse proxy 
+*NOTE: NOW THAT TSL IS ENABLED, FOLLOW THE TLS GUIDE TO CONFIGURE NGINX*
 
 Terminates the public hostname and forwards to the ingress IP over the
 WireGuard tunnel.
@@ -246,6 +247,8 @@ fullnameOverride, a distinct electionID, and a distinct ingressClassResource.nam
 Apps needing internal-only access use ingressClassName: nginx-internal instead of nginx.
 
 #### Note: Since the current cluster has no DNS in place i manually edited /etc/hosts on laptop: 10.0.0.71 pgadmin.internal.dna-server.com. Small work around for now, will fix later 
+
+#### UPDATED NOTE: THE CLUSTER HAS INTERNAL DNS, REFER TO dnaserver-DNS TO SET IT UP THERE
 
 ## Adding a new app later (checklist)
 
